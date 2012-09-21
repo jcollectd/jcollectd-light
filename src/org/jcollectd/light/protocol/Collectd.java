@@ -66,14 +66,14 @@ public class Collectd {
     }
 
     public enum Type {
-        COUNTER((short) 0),
-        GAUGE((short) 1),
-        DERIVE((short) 2),
-        ABSOLUTE((short) 3);
+        COUNTER((byte) 0),
+        GAUGE((byte) 1),
+        DERIVE((byte) 2),
+        ABSOLUTE((byte) 3);
 
-        public final short ID;
+        public final byte ID;
 
-        Type(short id) {
+        Type(byte id) {
             ID = id;
         }
 
