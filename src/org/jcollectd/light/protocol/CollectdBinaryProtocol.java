@@ -24,14 +24,9 @@
 
 package org.jcollectd.light.protocol;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 
 /**
  * jcollectd - org.jcollectd.light.protocol
@@ -108,39 +103,29 @@ public class CollectdBinaryProtocol {
 
     /* ENC/SIGN*/
 
-    public static short length(Mac hmacSHA256, String username) {
-        return (short) (length(username) - 1 + hmacSHA256.getMacLength());
+    public static byte[] sign(short partId, String username, byte[] hmac) throws IOException {
+        return sign(ByteBuffer.allocate(length(username) - 1 + hmac.length), partId, username, hmac).array();
     }
 
-    public static Mac hmacSHA256(String key) throws NoSuchAlgorithmException, InvalidKeyException, UnsupportedEncodingException {
-        Mac hmacSHA256 = Mac.getInstance("HmacSHA256");
-        SecretKeySpec sKey = new SecretKeySpec(key.getBytes("US-ASCII"), hmacSHA256.getAlgorithm());
-        hmacSHA256.init(sKey);
-
-        return hmacSHA256;
-    }
-
-    public static byte[] sign(short partId, Mac hmacSHA256, String username, byte[] bytes) throws IOException {
-        return sign(ByteBuffer.allocate(length(hmacSHA256, username)), partId, hmacSHA256, username, bytes).array();
-    }
-
-
-    public static ByteBuffer sign(ByteBuffer buffer, short partId, Mac hmacSHA256, String username, byte[] bytes) throws IOException {
-        header(buffer, partId, length(hmacSHA256, username)); //write header
-        //TODO: rewrite this ugliness
-        byte[] bytesWUser = ByteBuffer.allocate(username.length() + bytes.length).put(username.getBytes()).put(bytes).array();
-        buffer.put(hmacSHA256.doFinal(bytesWUser)); //write signature
+    public static ByteBuffer sign(ByteBuffer buffer, short partId, String username, byte[] hmac) throws IOException {
+        header(buffer, partId, (short) (length(username) - 1 + hmac.length)); //write header
+        buffer.put(hmac); //write signature
         buffer.put(username.getBytes()); //write username
         return buffer;
     }
 
-    public static ByteBuffer enc(short partId, String username, byte[] bytes) throws IOException {
-        return enc(ByteBuffer.allocate(0), partId, username, bytes);
+    public static byte[] encrypt(short partId, String username, byte[] iv, byte[] bytes) throws IOException {
+        return encrypt(ByteBuffer.allocate(length(username) - 1 + UINT16_LEN + iv.length + bytes.length), partId, username, iv, bytes).array();
     }
 
-    public static ByteBuffer enc(ByteBuffer buffer, short partId, String username, byte[] bytes) throws IOException {
+    public static ByteBuffer encrypt(ByteBuffer buffer, short partId, String username, byte[] iv, byte[] bytes) throws IOException {
+        header(buffer, partId, (short) (length(username) - 1 + UINT16_LEN + iv.length + bytes.length));  //write header
+        buffer.putShort((short) username.length()).put(username.getBytes()); //write user length and user
+        buffer.put(iv); // write init vector
+        buffer.put(bytes); // write payload
         return buffer;
     }
+
 
     /* type helpers */
 
