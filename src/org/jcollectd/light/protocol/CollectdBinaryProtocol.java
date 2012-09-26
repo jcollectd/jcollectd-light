@@ -27,6 +27,7 @@ package org.jcollectd.light.protocol;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.util.List;
 
 /**
  * jcollectd - org.jcollectd.light.protocol
@@ -55,10 +56,6 @@ public class CollectdBinaryProtocol {
     /* http://collectd.org/wiki/index.php/Binary_protocol#Protocol_structure */
 
     /* part header w. type and length */
-    public static byte[] header(short partId, short len) throws IOException {
-        return header(ByteBuffer.allocate(HEADER_LEN), partId, len).array();
-    }
-
     public static ByteBuffer header(ByteBuffer buffer, short partId, short length) throws IOException {
         buffer.putShort(partId); //write partId
         buffer.putShort(length); //write part length
@@ -66,10 +63,6 @@ public class CollectdBinaryProtocol {
     }
 
     /* http://collectd.org/wiki/index.php/Binary_protocol#Numeric_parts */
-    public static byte[] numeric(short partId, long val) throws IOException {
-        return numeric(ByteBuffer.allocate(HEADER_LEN + UINT64_LEN), partId, val).array();
-    }
-
     public static ByteBuffer numeric(ByteBuffer buffer, short part, long val) throws IOException {
         header(buffer, part, (short) (HEADER_LEN + UINT64_LEN)); //write header
         buffer.putLong(val); //write long
@@ -84,14 +77,6 @@ public class CollectdBinaryProtocol {
         return 0;
     }
 
-    public static byte[] string(short partId, String val) throws IOException {
-        short length = length(val);
-        if (length > 0) {
-            return string(ByteBuffer.allocate(length), partId, val).array();
-        }
-        return new byte[0];
-    }
-
     public static ByteBuffer string(ByteBuffer buffer, short partId, String val) throws IOException {
         short length = length(val);
         if (length > 0) {
@@ -101,21 +86,29 @@ public class CollectdBinaryProtocol {
         return buffer;
     }
 
-    /* ENC/SIGN*/
-
-    public static byte[] sign(short partId, String username, byte[] hmac) throws IOException {
-        return sign(ByteBuffer.allocate(length(username) - 1 + hmac.length), partId, username, hmac).array();
+    /*http://collectd.org/wiki/index.php/Binary_protocol#Value_parts*/
+    public static short length(List<byte[]> vals) {
+        return (short) (HEADER_LEN + UINT16_LEN + ((UINT8_LEN + UINT64_LEN) * vals.size()));
     }
+
+    public static ByteBuffer values(ByteBuffer buffer, short partId, byte[] types, List<byte[]> vals) throws IOException {
+        header(buffer, partId, length(vals));
+        buffer.putShort((short) vals.size());
+        buffer.put(types);
+        for (byte[] value : vals) {
+            buffer.put(value);
+        }
+        return buffer;
+    }
+
+
+    /* ENC/SIGN*/
 
     public static ByteBuffer sign(ByteBuffer buffer, short partId, String username, byte[] hmac) throws IOException {
         header(buffer, partId, (short) (length(username) - 1 + hmac.length)); //write header
         buffer.put(hmac); //write signature
         buffer.put(username.getBytes()); //write username
         return buffer;
-    }
-
-    public static byte[] encrypt(short partId, String username, byte[] iv, byte[] bytes) throws IOException {
-        return encrypt(ByteBuffer.allocate(length(username) - 1 + UINT16_LEN + iv.length + bytes.length), partId, username, iv, bytes).array();
     }
 
     public static ByteBuffer encrypt(ByteBuffer buffer, short partId, String username, byte[] iv, byte[] bytes) throws IOException {
@@ -130,34 +123,32 @@ public class CollectdBinaryProtocol {
     /* type helpers */
 
     /* http://collectd.org/wiki/index.php/Binary_protocol#Value_parts */
-    public static byte[] header(byte typeId) {
-        return header(ByteBuffer.allocate(UINT8_LEN), typeId).array();
-    }
-
-    private static ByteBuffer header(ByteBuffer buffer, byte typeId) {
+    public static ByteBuffer header(ByteBuffer buffer, byte typeId) {
         buffer.put(typeId); //write typeId
         return buffer;
     }
 
-    public static byte[] value(byte typeId, long val) throws IOException {
-        return value(ByteBuffer.allocate(UINT8_LEN + UINT64_LEN), typeId, val).array();
-    }
-
-    public static ByteBuffer value(ByteBuffer buffer, byte typeId, long val) throws IOException {
-        header(buffer, typeId); //write header
+    public static ByteBuffer value(ByteBuffer buffer, long val) {
         buffer.putLong(val); //write long
         return buffer;
     }
 
-    public static byte[] value(byte typeId, double val) throws IOException {
-        return value(ByteBuffer.allocate(UINT8_LEN + UINT64_LEN), typeId, val).array();
+    public static ByteBuffer value(ByteBuffer buffer, byte typeId, long val) throws IOException {
+        header(buffer, typeId); //write header
+        value(buffer, val); //write long
+        return buffer;
+    }
+
+    public static ByteBuffer value(ByteBuffer buffer, double val) throws IOException {
+        ByteOrder order = buffer.order(); //get buffer's order
+        buffer.order(ByteOrder.LITTLE_ENDIAN).putDouble(val); //switch to LITTLE_ENDIAN, write double
+        buffer.order(order); //switch to original byteorder
+        return buffer;
     }
 
     public static ByteBuffer value(ByteBuffer buffer, byte typeId, double val) throws IOException {
         header(buffer, typeId); //write header
-        ByteOrder order = buffer.order(); //get buffer's order
-        buffer.order(ByteOrder.LITTLE_ENDIAN).putDouble(val); //switch to LITTLE_ENDIAN, write double
-        buffer.order(order); //switch to original byteorder
+        value(buffer, val); //write val
         return buffer;
     }
 }

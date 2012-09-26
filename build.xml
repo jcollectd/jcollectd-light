@@ -23,13 +23,14 @@
   ~ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
   -->
 
-<project name="jcollectd-light" default="default">
+<project name="jcollectd-light" default="default" basedir=".">
     <property name="version" value="0.1.0-dev"/>
 
     <include file="../jcollectd/build.xml" as="build"/>
 
     <target name="clean" depends="build.clean"/>
     <target name="compile" depends="build.compile"/>
+    <target name="javadoc" depends="build.javadoc"/>
     <target name="default" depends="build.default"/>
 
 </project>
