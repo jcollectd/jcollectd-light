@@ -125,6 +125,11 @@ public class CollectdBinaryProtocolTest {
 
     }
 
+    private short length(String s) {
+        if (s == null) s = "";
+        return (short) (HEADER_LEN + s.length() + 1);
+    }
+
     @Test
     public void testNumeric() throws Exception {
         assertArrayEquals("0001000c0000000050531d18",
@@ -194,7 +199,7 @@ public class CollectdBinaryProtocolTest {
                 "7465737475736572"); // username
 
         Helper.assertArrayEquals(signature,
-                CollectdBinaryProtocol.sign(ByteBuffer.allocate(CollectdBinaryProtocol.length(key) - 1 + hmacSHA256.getMacLength()), (short) 0x0200, user, hmacSHA256.doFinal(ByteBuffer.allocate(user.length() + payload.length).put(user.getBytes()).put(payload).array())));
+                CollectdBinaryProtocol.sign(ByteBuffer.allocate(length(key) - 1 + hmacSHA256.getMacLength()), (short) 0x0200, user, hmacSHA256.doFinal(ByteBuffer.allocate(user.length() + payload.length).put(user.getBytes()).put(payload).array())));
         /**/
 
         payload = DatatypeConverter.parseHexBinary(
@@ -207,7 +212,7 @@ public class CollectdBinaryProtocolTest {
 
         assertArrayEquals(signature,
                 CollectdBinaryProtocol.sign(
-                        ByteBuffer.allocate(CollectdBinaryProtocol.length(key) - 1 + hmacSHA256.getMacLength()),
+                        ByteBuffer.allocate(length(key) - 1 + hmacSHA256.getMacLength()),
                         (short) 0x0200, user, hmacSHA256.doFinal(ByteBuffer.allocate(user.length() + payload.length).put(user.getBytes()).put(payload).array())));
         /**/
 
@@ -221,7 +226,7 @@ public class CollectdBinaryProtocolTest {
 
         assertArrayEquals(signature,
                 CollectdBinaryProtocol.sign(
-                        ByteBuffer.allocate(CollectdBinaryProtocol.length(key) - 1 + hmacSHA256.getMacLength()),
+                        ByteBuffer.allocate(length(key) - 1 + hmacSHA256.getMacLength()),
                         (short) 0x0200, user, hmacSHA256.doFinal(ByteBuffer.allocate(user.length() + payload.length).put(user.getBytes()).put(payload).array())));
 
     }
