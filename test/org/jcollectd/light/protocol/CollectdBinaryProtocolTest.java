@@ -36,6 +36,7 @@ import javax.crypto.spec.SecretKeySpec;
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -256,6 +257,8 @@ public class CollectdBinaryProtocolTest {
         Cipher cipher = aes256();
 
         SecretKey secret = new SecretKeySpec(MessageDigest.getInstance("SHA-256").digest(key.getBytes()), "AES");
+        try{
+
         cipher.init(Cipher.DECRYPT_MODE, secret, new IvParameterSpec(iv));
 
         MessageDigest cript = MessageDigest.getInstance("SHA-1");
@@ -282,6 +285,10 @@ public class CollectdBinaryProtocolTest {
         byte[] b = cipher.doFinal(ByteBuffer.allocate(md.getDigestLength() + payloadFwd.length).put(md.digest(payloadFwd)).put(payloadFwd).array());
 
         assertArrayEquals(payloadEnc, CollectdBinaryProtocol.encrypt(ByteBuffer.allocate(length(key) - 1 + UINT16_LEN + iv.length + b.length), (short) 0x0210, user, cipher.getIV(), b));
+        }
+        catch (InvalidKeyException e){
+            e.printStackTrace();
+        }
 
     }
 
