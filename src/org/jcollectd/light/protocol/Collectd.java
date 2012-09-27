@@ -24,6 +24,10 @@
 
 package org.jcollectd.light.protocol;
 
+import java.math.BigDecimal;
+import java.nio.ByteBuffer;
+import java.util.List;
+
 /**
  * jcollectd - org.jcollectd.light.protocol
  * <p/>
@@ -63,20 +67,101 @@ public class Collectd {
             this.ID = id;
         }
 
+        public void write(ByteBuffer buffer, String string) {
+            CollectdBinaryProtocol.string(buffer, ID, string);
+        }
     }
 
-    public enum Type {
-        COUNTER((byte) 0),
-        GAUGE((byte) 1),
-        DERIVE((byte) 2),
-        ABSOLUTE((byte) 3);
+    public static class Value{
+        private Type type;
+        private Number value;
 
-        public final byte ID;
-
-        Type(byte id) {
-            ID = id;
+        public Value(Type type, Number value) {
+            this.type = type;
+            this.value = value;
         }
 
+        public static Value valueOf(Number value) {
+            Type type = Type.DERIVE;
+            if (value instanceof Float || value instanceof Double || value instanceof BigDecimal) {
+                type = Type.GAUGE;
+            }
+            return valueOf(type, value);
+        }
+
+        public static Value valueOf(Type type, Number value) {
+            return new Value(type, value);
+        }
+
+        public enum Type {
+            COUNTER((byte) 0) {
+                @Override
+                public void write(ByteBuffer bytesBuffer, Number val) {
+                    CollectdBinaryProtocol.value(bytesBuffer, val.longValue());
+                }
+            },
+            GAUGE((byte) 1) {
+                @Override
+                public void write(ByteBuffer bytesBuffer, Number val) {
+                    CollectdBinaryProtocol.value(bytesBuffer, val.doubleValue());
+                }
+            },
+            DERIVE((byte) 2) {
+                @Override
+                public void write(ByteBuffer bytesBuffer, Number val) {
+                    CollectdBinaryProtocol.value(bytesBuffer, val.intValue());
+                }
+            },
+            ABSOLUTE((byte) 3) {
+                @Override
+                public void write(ByteBuffer bytesBuffer, Number val) {
+                    CollectdBinaryProtocol.value(bytesBuffer, val.longValue());
+                }
+            };
+
+            public final byte ID;
+
+            Type(byte id) {
+                ID = id;
+            }
+
+            public abstract void write(ByteBuffer bytesBuffer, Number val);
+
+            public void header(ByteBuffer buffer) {
+                CollectdBinaryProtocol.header(buffer, ID);
+            }
+        }
+
+    }
+
+    public static void values(ByteBuffer buffer, String hostname, String plugin, String pluginInstance, String type, String typeInstance, List<Value> values) {
+        if (!isEmpty(hostname))
+            Part.HOST.write(buffer, hostname);
+        if (!isEmpty(plugin))
+            Part.PLUGIN.write(buffer, plugin);
+        if (!isEmpty(pluginInstance))
+            Part.PLUGIN_INSTANCE.write(buffer, pluginInstance);
+        if (!isEmpty(type))
+            Part.TYPE.write(buffer, type);
+        if (!isEmpty(typeInstance))
+            Part.TYPE_INSTANCE.write(buffer, typeInstance);
+        if (values != null && !values.isEmpty()) {
+            byte types[] = new byte[values.size()];
+            byte bytes[] = new byte[CollectdBinaryProtocol.UINT64_LEN * values.size()];
+            ByteBuffer typesBuffer = ByteBuffer.wrap(types);
+            ByteBuffer bytesBuffer = ByteBuffer.wrap(bytes);
+            for (Value val : values) {
+                val.type.header(typesBuffer);
+                val.type.write(bytesBuffer, val.value);
+            }
+            CollectdBinaryProtocol.values(buffer, Part.VALUES.ID, types, bytes);
+        }
+
+        //TODO: timestamp and interval
+    }
+
+    private static boolean isEmpty(String string) {
+        return string == null || string.isEmpty();
     }
 
 
