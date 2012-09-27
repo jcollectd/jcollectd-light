@@ -26,7 +26,7 @@
 <project name="jcollectd-light" default="default" basedir=".">
     <property name="version" value="0.1.0-dev"/>
 
-    <include file="../jcollectd/build.xml" as="build"/>
+    <include file="${basedir}/default.xml" as="build"/>
 
     <target name="clean" depends="build.clean"/>
     <target name="compile" depends="build.compile"/>

@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<!--
+  ~ Copyright (c) 2012. Andrus Viik and other contributors
+  ~ http://jcollectd.org/
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining
+  ~ a copy of this software and associated documentation files (the
+  ~ "Software"), to deal in the Software without restriction, including
+  ~ without limitation the rights to use, copy, modify, merge, publish,
+  ~ distribute, sublicense, and/or sell copies of the Software, and to
+  ~ permit persons to whom the Software is furnished to do so, subject to
+  ~ the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be
+  ~ included in all copies or substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+  ~ EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+  ~ MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+  ~ NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+  ~ LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
+  ~ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
+  ~ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  -->
+
+<project xmlns:ivy="antlib:org.apache.ivy.ant" name="jcollectd" default="default">
+    <description>Java collectd</description>
+
+    <!--GET IVY-->
+    <property name="ivy.jar.version" value="2.2.0"/>
+    <property name="ivy.jar.name" value="ivy-${ivy.jar.version}.jar"/>
+    <property name="ivy.home" value="${user.home}/.ivy2"/>
+    <available property="ivy.installed" file="${ivy.home}/${ivy.jar.name}"/>
+    <!--  this is called once and auto-installs the ivy jar into ~/.ivy2 so that users only have to have ant to build. -->
+    <target name="ivy-install" unless="ivy.installed">
+        <mkdir dir="${ivy.home}"/>
+        <get src="http://repo1.maven.org/maven2/org/apache/ivy/ivy/${ivy.jar.version}/${ivy.jar.name}"
+             dest="${ivy.home}/${ivy.jar.name}"/>
+    </target>
+    <!-- this is called automatically and just inits ivy -->
+
+    <target name="ivy-init" depends="ivy-install">
+        <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant"
+                 classpath="${ivy.home}/${ivy.jar.name}"/>
+        <ivy:resolve/>
+    </target>
+
+    <property name="src.dir" location="src"/>
+    <property name="test.dir" location="test"/>
+    <property name="lib.dir" value="lib"/>
+    <property name="build.dir" value="build"/>
+
+
+    <property name="classes" value="${build.dir}/classes"/>
+    <property name="tests" value="${build.dir}/tests"/>
+    <property name="dist.dir" value="${build.dir}/dist"/>
+    <property name="testresults" location="${build.dir}/testresults"/>
+
+    <path id="classpath">
+        <fileset dir="${lib.dir}" includes="**/*.jar"></fileset>
+    </path>
+
+    <property name="version" value="0.3.0-dev"/>
+    <property name="dist.name" value="${ant.project.name}-${version}"/>
+    <property name="dist.jar" value="${build.dir}/${dist.name}.jar"/>
+
+    <property name="debug" value="true"/>
+
+    <target name="clean">
+        <delete dir="${build.dir}"/>
+        <delete dir="${lib.dir}"/>
+        <mkdir dir="${build.dir}"/>
+        <mkdir dir="${lib.dir}"/>
+        <mkdir dir="${classes}"/>
+    </target>
+
+    <target name="compile" depends="ivy-init">
+        <mkdir dir="${classes}"/>
+        <mkdir dir="${classes}/META-INF"/>
+        <copy todir="${classes}/META-INF">
+            <fileset dir="${src.dir}/META-INF"/>
+        </copy>
+        <javac sourcepath="" srcdir="${src.dir}" destdir="${classes}" debug="${debug}" source="1.6" target="1.6"
+               classpath="${classes}"/>
+    </target>
+
+    <target name="compile-tests" depends="compile">
+        <ivy:retrieve conf="test" sync="true"/>
+        <mkdir dir="${tests}"/>
+        <javac srcdir="${test.dir}" destdir="${tests}" classpathref="classpath"
+               debug="${debug}" source="1.6" target="1.6">
+            <classpath path="${classes}"/>
+        </javac>
+    </target>
+
+    <target name="test" depends="compile-tests">
+        <mkdir dir="${testresults}"/>
+
+        <junit printsummary="yes" fork="yes"
+               haltonfailure="yes" showoutput="true">
+
+            <classpath>
+                <path refid="classpath"/>
+                <path location="${classes}"/>
+                <path location="${tests}"/>
+            </classpath>
+
+            <formatter type="xml"/>
+
+            <batchtest fork="yes" todir="${testresults}">
+                <fileset dir="${test.dir}">
+                    <include name="**/*Test.java"/>
+                </fileset>
+            </batchtest>
+        </junit>
+    </target>
+
+    <target name="dist" depends="clean, test">
+        <jar jarfile="${dist.jar}">
+            <fileset dir="${classes}"
+                     excludes="**/*Test.class"/>
+            <manifest>
+                <attribute name="Premain-Class"
+                           value="org.collectd.agent.mx.MBeanSender"/>
+            </manifest>
+        </jar>
+    </target>
+
+    <target name="javadoc">
+        <javadoc
+                destdir="${build.dir}/doc"
+                author="true"
+                version="true"
+                use="true"
+                windowtitle="${ant.project.name} api"
+                >
+
+            <fileset dir="${src.dir}">
+                <include name="**/*.java"/>
+            </fileset>
+        </javadoc>
+    </target>
+
+    <target name="default" depends="dist,javadoc"/>
+</project>
