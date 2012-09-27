@@ -77,9 +77,9 @@
     <target name="compile" depends="ivy-init">
         <mkdir dir="${classes}"/>
         <mkdir dir="${classes}/META-INF"/>
-        <copy todir="${classes}/META-INF">
+        <!--copy todir="${classes}/META-INF">
             <fileset dir="${src.dir}/META-INF"/>
-        </copy>
+        </copy-->
         <javac sourcepath="" srcdir="${src.dir}" destdir="${classes}" debug="${debug}" source="1.6" target="1.6"
                classpath="${classes}"/>
     </target>
