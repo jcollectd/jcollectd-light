@@ -72,57 +72,91 @@ public class CollectdBinaryProtocolTest {
 
     @Test
     public void testHeader() throws Exception {
-        assertArrayEquals("00", CollectdBinaryProtocol.header(ByteBuffer.allocate(UINT8_LEN), (byte) 0));
-        assertArrayEquals("02", CollectdBinaryProtocol.header(ByteBuffer.allocate(UINT8_LEN), (byte) 2));
-        assertArrayEquals("03",
-                CollectdBinaryProtocol.header(ByteBuffer.allocate(UINT8_LEN), (byte) 3));
-        assertArrayEquals("04",
-                CollectdBinaryProtocol.header(ByteBuffer.allocate(UINT8_LEN), (byte) 4));
-        assertArrayEquals("05",
-                CollectdBinaryProtocol.header(ByteBuffer.allocate(UINT8_LEN), (byte) 5));
+        ByteBuffer byteBuffer = ByteBuffer.allocate(UINT8_LEN);
+        CollectdBinaryProtocol.header(byteBuffer, (byte) 0);
+        assertArrayEquals("00", byteBuffer);
 
+        byteBuffer.clear();
+        CollectdBinaryProtocol.header(byteBuffer, (byte) 2);
+        assertArrayEquals("02", byteBuffer);
 
-        assertArrayEquals("00000012",
-                CollectdBinaryProtocol.header(ByteBuffer.allocate(HEADER_LEN), (short) 0, (short) 18));
-        assertArrayEquals("0002000d",
-                CollectdBinaryProtocol.header(ByteBuffer.allocate(HEADER_LEN), (short) 2, (short) 13));
-        assertArrayEquals("0003000d",
-                CollectdBinaryProtocol.header(ByteBuffer.allocate(HEADER_LEN), (short) 3, (short) 13));
-        assertArrayEquals("00040014",
-                CollectdBinaryProtocol.header(ByteBuffer.allocate(HEADER_LEN), (short) 4, (short) 20));
-        assertArrayEquals("0005000c",
-                CollectdBinaryProtocol.header(ByteBuffer.allocate(HEADER_LEN), (short) 5, (short) 12));
+        byteBuffer.clear();
+        CollectdBinaryProtocol.header(byteBuffer, (byte) 3);
+        assertArrayEquals("03", byteBuffer);
+
+        byteBuffer.clear();
+        CollectdBinaryProtocol.header(byteBuffer, (byte) 4);
+        assertArrayEquals("04", byteBuffer);
+
+        byteBuffer.clear();
+        CollectdBinaryProtocol.header(byteBuffer, (byte) 5);
+        assertArrayEquals("05", byteBuffer);
+
+        byteBuffer = ByteBuffer.allocate(HEADER_LEN);
+        CollectdBinaryProtocol.header(byteBuffer, (short) 0, (short) 18);
+        assertArrayEquals("00000012", byteBuffer);
+
+        byteBuffer.clear();
+        CollectdBinaryProtocol.header(byteBuffer, (short) 2, (short) 13);
+        assertArrayEquals("0002000d", byteBuffer);
+
+        byteBuffer.clear();
+        CollectdBinaryProtocol.header(byteBuffer, (short) 3, (short) 13);
+        assertArrayEquals("0003000d", byteBuffer);
+
+        byteBuffer.clear();
+        CollectdBinaryProtocol.header(byteBuffer, (short) 4, (short) 20);
+        assertArrayEquals("00040014", byteBuffer);
+
+        byteBuffer.clear();
+        CollectdBinaryProtocol.header(byteBuffer, (short) 5, (short) 12);
+        assertArrayEquals("0005000c", byteBuffer);
+
     }
 
 
     @Test
     public void testString() throws Exception {
-        assertArrayEquals("00000012627269636b792e74656570756200",
-                CollectdBinaryProtocol.string(ByteBuffer.allocate(length("bricky.teepub")), (short) 0, "bricky.teepub"))
-        ;
-        assertArrayEquals("0000000f6465622e74656570756200",
-                CollectdBinaryProtocol.string(ByteBuffer.allocate(length("deb.teepub")), (short) 0, "deb.teepub"));
+        ByteBuffer buffer = ByteBuffer.allocate(length("bricky.teepub"));
+        CollectdBinaryProtocol.string(buffer, (short) 0, "bricky.teepub");
+        assertArrayEquals("00000012627269636b792e74656570756200", buffer);
 
-        assertArrayEquals("0002000d746370636f6e6e7300",
-                CollectdBinaryProtocol.string(ByteBuffer.allocate(length("tcpconns")), (short) 2, "tcpconns"));
-        assertArrayEquals("0002000863707500",
-                CollectdBinaryProtocol.string(ByteBuffer.allocate(length("cpu")), (short) 2, "cpu"));
+        buffer = ByteBuffer.allocate(length("deb.teepub"));
+        CollectdBinaryProtocol.string(buffer, (short) 0, "deb.teepub");
+        assertArrayEquals("0000000f6465622e74656570756200", buffer);
 
-        assertArrayEquals("0003000d32322d6c6f63616c00",
-                CollectdBinaryProtocol.string(ByteBuffer.allocate(length("22-local")), (short) 3, "22-local"));
-        assertArrayEquals("000300063000",
-                CollectdBinaryProtocol.string(ByteBuffer.allocate(length("0")), (short) 3, "0"));
+        buffer = ByteBuffer.allocate(length("tcpconns"));
+        CollectdBinaryProtocol.string(buffer, (short) 2, "tcpconns");
+        assertArrayEquals("0002000d746370636f6e6e7300", buffer);
 
-        assertArrayEquals("000400147463705f636f6e6e656374696f6e7300",
-                CollectdBinaryProtocol.string(ByteBuffer.allocate(length("tcp_connections")), (short) 4, "tcp_connect" +
-                        "ions"));
-        assertArrayEquals("0004000863707500",
-                CollectdBinaryProtocol.string(ByteBuffer.allocate(length("cpu")), (short) 4, "cpu"));
+        buffer = ByteBuffer.allocate(length("cpu"));
+        CollectdBinaryProtocol.string(buffer, (short) 2, "cpu");
+        assertArrayEquals("0002000863707500", buffer);
 
-        assertArrayEquals("0005000c434c4f53494e4700",
-                CollectdBinaryProtocol.string(ByteBuffer.allocate(length("CLOSING")), (short) 5, "CLOSING"));
-        assertArrayEquals("000500096e69636500",
-                CollectdBinaryProtocol.string(ByteBuffer.allocate(length("nice")), (short) 5, "nice"));
+        buffer = ByteBuffer.allocate(length("22-local"));
+        CollectdBinaryProtocol.string(buffer, (short) 3, "22-local");
+        assertArrayEquals("0003000d32322d6c6f63616c00", buffer);
+
+        buffer = ByteBuffer.allocate(length("0"));
+        CollectdBinaryProtocol.string(buffer, (short) 3, "0");
+        assertArrayEquals("000300063000", buffer);
+
+        buffer = ByteBuffer.allocate(length("tcp_connections"));
+        CollectdBinaryProtocol.string(buffer, (short) 4, "tcp_connections");
+        assertArrayEquals("000400147463705f636f6e6e656374696f6e7300", buffer);
+
+
+        buffer = ByteBuffer.allocate(length("cpu"));
+        CollectdBinaryProtocol.string(buffer, (short) 4, "cpu");
+        assertArrayEquals("0004000863707500", buffer);
+
+        buffer = ByteBuffer.allocate(length("CLOSING"));
+        CollectdBinaryProtocol.string(buffer, (short) 5, "CLOSING");
+        assertArrayEquals("0005000c434c4f53494e4700", buffer);
+
+        buffer = ByteBuffer.allocate(length("nice"));
+        CollectdBinaryProtocol.string(buffer, (short) 5, "nice");
+        assertArrayEquals("000500096e69636500", buffer);
 
     }
 
@@ -133,51 +167,68 @@ public class CollectdBinaryProtocolTest {
 
     @Test
     public void testNumeric() throws Exception {
-        assertArrayEquals("0001000c0000000050531d18",
-                CollectdBinaryProtocol.numeric(ByteBuffer.allocate(HEADER_LEN + UINT64_LEN), (short) 1, 1347624216));
+        ByteBuffer buffer = ByteBuffer.allocate(HEADER_LEN + UINT64_LEN);
+        CollectdBinaryProtocol.numeric(buffer, (short) 1, 1347624216);
+        assertArrayEquals("0001000c0000000050531d18", buffer);
 
-        assertArrayEquals("0007000c0000000000000005",
-                CollectdBinaryProtocol.numeric(ByteBuffer.allocate(HEADER_LEN + UINT64_LEN), (short) 7, 5));
+        buffer.clear();
+        CollectdBinaryProtocol.numeric(buffer, (short) 7, 5);
+        assertArrayEquals("0007000c0000000000000005", buffer);
 
-        assertArrayEquals("0007000c0000000140000000",
-                CollectdBinaryProtocol.numeric(ByteBuffer.allocate(HEADER_LEN + UINT64_LEN), (short) 7, 5368709120L));
+        buffer.clear();
+        CollectdBinaryProtocol.numeric(buffer, (short) 7, 5368709120L);
+        assertArrayEquals("0007000c0000000140000000", buffer);
 
-        assertArrayEquals("0008000c1414cbc85c6ae9d8",
-                CollectdBinaryProtocol.numeric(
-                        ByteBuffer.allocate(HEADER_LEN + UINT64_LEN), (short) 8, 1447005441697180120L));
-
-
+        buffer.clear();
+        CollectdBinaryProtocol.numeric(buffer, (short) 8, 1447005441697180120L);
+        assertArrayEquals("0008000c1414cbc85c6ae9d8", buffer);
     }
 
     @Test
     public void testLong() throws Exception {
-        assertArrayEquals("020000000000000000",
-                CollectdBinaryProtocol.value(ByteBuffer.allocate(UINT8_LEN + UINT64_LEN), (byte) 2, 0));
-        assertArrayEquals("0200000000000016bc",
-                CollectdBinaryProtocol.value(ByteBuffer.allocate(UINT8_LEN + UINT64_LEN), (byte) 2, 5820));
+        ByteBuffer buffer = ByteBuffer.allocate(UINT64_LEN);
+        CollectdBinaryProtocol.value(buffer, 0);
+        assertArrayEquals("0000000000000000", buffer);
 
-        assertArrayEquals("0000000000000000",
-                CollectdBinaryProtocol.value(ByteBuffer.allocate(UINT64_LEN), 0));
-        assertArrayEquals("00000000000016bc",
-                CollectdBinaryProtocol.value(ByteBuffer.allocate(UINT64_LEN), 5820));
+        buffer.clear();
+        CollectdBinaryProtocol.value(buffer, 5820);
+        assertArrayEquals("00000000000016bc", buffer);
+
+        buffer = ByteBuffer.allocate(UINT8_LEN + UINT64_LEN);
+        CollectdBinaryProtocol.value(buffer, (byte) 2, 0);
+        assertArrayEquals("020000000000000000", buffer);
+
+        buffer.clear();
+        CollectdBinaryProtocol.value(buffer, (byte) 2, 5820);
+        assertArrayEquals("0200000000000016bc", buffer);
     }
 
     @Test
     public void testDecimal() throws Exception {
-        assertArrayEquals("01000000807fe34041",
-                CollectdBinaryProtocol.value(ByteBuffer.allocate(UINT8_LEN + UINT64_LEN), (byte) 1, 2213631.0));
-        assertArrayEquals("0100000000d0d0f93f",
-                CollectdBinaryProtocol.value(ByteBuffer.allocate(UINT8_LEN + UINT64_LEN), (byte) 1, 1.6134796142578125))
-        ;
-        assertArrayEquals("01000000000096a640",
-                CollectdBinaryProtocol.value(ByteBuffer.allocate(UINT8_LEN + UINT64_LEN), (byte) 1, 2891.0));
+        ByteBuffer buffer = ByteBuffer.allocate(UINT64_LEN);
+        CollectdBinaryProtocol.value(buffer, 2213631.0);
+        assertArrayEquals("000000807fe34041", buffer);
 
-        assertArrayEquals("000000807fe34041",
-                CollectdBinaryProtocol.value(ByteBuffer.allocate(UINT64_LEN), 2213631.0));
-        assertArrayEquals("00000000d0d0f93f",
-                CollectdBinaryProtocol.value(ByteBuffer.allocate(UINT64_LEN), 1.6134796142578125));
-        assertArrayEquals("000000000096a640",
-                CollectdBinaryProtocol.value(ByteBuffer.allocate(UINT64_LEN), 2891.0));
+        buffer.clear();
+        CollectdBinaryProtocol.value(buffer, 1.6134796142578125);
+        assertArrayEquals("00000000d0d0f93f", buffer);
+
+        buffer.clear();
+        CollectdBinaryProtocol.value(buffer, 2891.0);
+        assertArrayEquals("000000000096a640", buffer);
+
+        buffer = ByteBuffer.allocate(UINT8_LEN + UINT64_LEN);
+        CollectdBinaryProtocol.value(buffer, (byte) 1, 2213631.0);
+        assertArrayEquals("01000000807fe34041", buffer);
+
+        buffer.clear();
+        CollectdBinaryProtocol.value(buffer, (byte) 1, 1.6134796142578125);
+        assertArrayEquals("0100000000d0d0f93f", buffer);
+
+        buffer.clear();
+        CollectdBinaryProtocol.value(buffer, (byte) 1, 2891.0);
+        assertArrayEquals("01000000000096a640", buffer);
+
 
     }
 
@@ -199,9 +250,10 @@ public class CollectdBinaryProtocolTest {
                 "719adf9e15a4b60a658125370fdf4ec84e23e291571d705be09c10f2a1a7c4b4" + // signature
                 "7465737475736572"); // username
 
-        Helper.assertArrayEquals(signature,
-                CollectdBinaryProtocol.sign(ByteBuffer.allocate(length(key) - 1 + hmacSHA256.getMacLength()), (short) 0x0200, user, hmacSHA256.doFinal(ByteBuffer.allocate(user.length() + payload.length).put(user.getBytes()).put(payload).array())));
-        /**/
+        ByteBuffer buffer = ByteBuffer.allocate(length(key) - 1 + hmacSHA256.getMacLength());
+        CollectdBinaryProtocol.sign(buffer, (short) 0x0200, user, hmacSHA256.doFinal(ByteBuffer.allocate(user.length() + payload.length).put(user.getBytes()).put(payload).array()));
+        assertArrayEquals(signature, buffer);
+
 
         payload = DatatypeConverter.parseHexBinary(
                 "0000000974657374000008000c1416c3ad23f211c60009000c00000000400000000002000a7573657273000004000a7573657273000006000f00010100000000000000400008000c1416c3ad63f21f750006000f00010100000000000000400008000c1416c3ada3f1efa90006000f00010100000000000000400008000c1416c3ade3f23ad10006000f00010100000000000000400008000c1416c3ae23f2a59f0006000f00010100000000000000400008000c1416c3ae63f228ec0006000f00010100000000000000400008000c1416c3aea3f22d160006000f00010100000000000000400008000c1416c3aee3f239000006000f00010100000000000000400008000c1416c3af23f283af0006000f00010100000000000000400008000c1416c3af63f1f1400006000f00010100000000000000400008000c1416c3afa3f28a8a0006000f00010100000000000000400008000c1416c3afe3f2711f0006000f00010100000000000000400008000c1416c3b023f247770006000f00010100000000000000400008000c1416c3b063f24b0d0006000f00010100000000000000400008000c1416c3b0a3f22c3f0006000f00010100000000000000400008000c1416c3b0e3f23fdb0006000f00010100000000000000400008000c1416c3b123f243150006000f00010100000000000000400008000c1416c3b163f22b0c0006000f00010100000000000000400008000c1416c3b1a3f23b370006000f00010100000000000000400008000c1416c3b1e3f268520006000f00010100000000000000400008000c1416c3b223f229870006000f00010100000000000000400008000c1416c3b263f21fd90006000f00010100000000000000400008000c1416c3b2a3f2380f0006000f00010100000000000000400008000c1416c3b2e3f22eae0006000f00010100000000000000400008000c1416c3b323f23b320006000f00010100000000000000400008000c1416c3b363f25d7d0006000f00010100000000000000400008000c1416c3b3a3f281500006000f00010100000000000000400008000c1416c3b3e3f22d850006000f00010100000000000000400008000c1416c3b423f1ee1a0006000f00010100000000000000400008000c1416c3b463f238090006000f00010100000000000000400008000c1416c3b4a3f23a7f0006000f00010100000000000000400008000c1416c3b4e3f237d10006000f00010100000000000000400008000c1416c3b523f23b540006000f00010100000000000000400008000c1416c3b563f205920006000f00010100000000000000400008000c1416c3b5a3f20b960006000f00010100000000000000400008000c1416c3b5e3f24b440006000f00010100000000000000400008000c1416c3b623f212320006000f00010100000000000000400008000c1416c3b663f274f30006000f00010100000000000000400008000c1416c3b6a3f208a80006000f00010100000000000000400008000c1416c3b6e3f23e660006000f00010100000000000000400008000c1416c3b723f225050006000f00010100000000000000400008000c1416c3b763f20f050006000f00010100000000000000400008000c1416c3b7a3f21c5c0006000f00010100000000000000400008000c1416c3b7e3f1f5cc0006000f00010100000000000000400008000c1416c3b823f2094d0006000f00010100000000000000400008000c1416c3b863f1f3930006000f00010100000000000000400008000c1416c3b8a3f268b00006000f00010100000000000000400008000c1416c3b8e3f1fa970006000f0001010000000000000040")
@@ -211,10 +263,11 @@ public class CollectdBinaryProtocolTest {
                 "775ad11cc489edb0aec1e6e84e7e28bedf51cc2d5fb9780dd6496f6a748e0a85" + //sign
                 "7465737475736572");//username
 
-        assertArrayEquals(signature,
-                CollectdBinaryProtocol.sign(
-                        ByteBuffer.allocate(length(key) - 1 + hmacSHA256.getMacLength()),
-                        (short) 0x0200, user, hmacSHA256.doFinal(ByteBuffer.allocate(user.length() + payload.length).put(user.getBytes()).put(payload).array())));
+        buffer.clear();
+        CollectdBinaryProtocol.sign(
+                buffer,
+                (short) 0x0200, user, hmacSHA256.doFinal(ByteBuffer.allocate(user.length() + payload.length).put(user.getBytes()).put(payload).array()));
+        assertArrayEquals(signature, buffer);
         /**/
 
         payload = DatatypeConverter.parseHexBinary(
@@ -225,10 +278,10 @@ public class CollectdBinaryProtocolTest {
                 "e2d5f30655863ec6974299dd24990a288aad4d225d116353f843722fcfa95e67" + //sign
                 "7465737475736572"); //user
 
-        assertArrayEquals(signature,
-                CollectdBinaryProtocol.sign(
-                        ByteBuffer.allocate(length(key) - 1 + hmacSHA256.getMacLength()),
-                        (short) 0x0200, user, hmacSHA256.doFinal(ByteBuffer.allocate(user.length() + payload.length).put(user.getBytes()).put(payload).array())));
+        buffer.clear();
+        CollectdBinaryProtocol.sign(buffer, (short) 0x0200, user,
+                hmacSHA256.doFinal(ByteBuffer.allocate(user.length() + payload.length).put(user.getBytes()).put(payload).array()));
+        assertArrayEquals(signature, buffer);
 
     }
 
@@ -257,36 +310,38 @@ public class CollectdBinaryProtocolTest {
         Cipher cipher = aes256();
 
         SecretKey secret = new SecretKeySpec(MessageDigest.getInstance("SHA-256").digest(key.getBytes()), "AES");
-        try{
+        try {
 
-        cipher.init(Cipher.DECRYPT_MODE, secret, new IvParameterSpec(iv));
+            cipher.init(Cipher.DECRYPT_MODE, secret, new IvParameterSpec(iv));
 
-        MessageDigest cript = MessageDigest.getInstance("SHA-1");
-        /**/
+            MessageDigest cript = MessageDigest.getInstance("SHA-1");
+            /**/
 
-        byte[] unciphertext = cipher.doFinal(payloadEncData);
+            byte[] unciphertext = cipher.doFinal(payloadEncData);
 
-        byte[] payloadSHA1 = new byte[cript.getDigestLength()];
-        byte[] payloadDec = new byte[unciphertext.length - payloadSHA1.length];
+            byte[] payloadSHA1 = new byte[cript.getDigestLength()];
+            byte[] payloadDec = new byte[unciphertext.length - payloadSHA1.length];
 
-        ByteBuffer buff = ByteBuffer.wrap(unciphertext);
+            ByteBuffer buff = ByteBuffer.wrap(unciphertext);
 
-        buff.get(payloadSHA1, 0, payloadSHA1.length);
-        buff.get(payloadDec);
-
-
-        Assert.assertArrayEquals(payloadSHA1, cript.digest(payloadDec));
-        Assert.assertArrayEquals(payloadFwd, payloadDec);
+            buff.get(payloadSHA1, 0, payloadSHA1.length);
+            buff.get(payloadDec);
 
 
-        /**/
-        cipher.init(Cipher.ENCRYPT_MODE, secret, new IvParameterSpec(iv));
-        MessageDigest md = MessageDigest.getInstance("SHA-1");
-        byte[] b = cipher.doFinal(ByteBuffer.allocate(md.getDigestLength() + payloadFwd.length).put(md.digest(payloadFwd)).put(payloadFwd).array());
+            Assert.assertArrayEquals(payloadSHA1, cript.digest(payloadDec));
+            Assert.assertArrayEquals(payloadFwd, payloadDec);
 
-        assertArrayEquals(payloadEnc, CollectdBinaryProtocol.encrypt(ByteBuffer.allocate(length(key) - 1 + UINT16_LEN + iv.length + b.length), (short) 0x0210, user, cipher.getIV(), b));
-        }
-        catch (InvalidKeyException e){
+
+            /**/
+            cipher.init(Cipher.ENCRYPT_MODE, secret, new IvParameterSpec(iv));
+            MessageDigest md = MessageDigest.getInstance("SHA-1");
+            byte[] b = cipher.doFinal(ByteBuffer.allocate(md.getDigestLength() + payloadFwd.length).put(md.digest(payloadFwd)).put(payloadFwd).array());
+
+            ByteBuffer buffer = ByteBuffer.allocate(length(key) - 1 + UINT16_LEN + iv.length + b.length);
+            CollectdBinaryProtocol.encrypt(buffer, (short) 0x0210, user, cipher.getIV(), b);
+            assertArrayEquals(payloadEnc, buffer);
+
+        } catch (InvalidKeyException e) {
             e.printStackTrace();
         }
 
@@ -301,9 +356,12 @@ public class CollectdBinaryProtocolTest {
         v.putLong(2);
         v.putLong(1);
 
-        assertArrayEquals(DatatypeConverter.parseHexBinary("000600180002020200000000000000020000000000000001"),
-                CollectdBinaryProtocol.values(ByteBuffer.allocate(HEADER_LEN + UINT16_LEN + ((UINT8_LEN + UINT64_LEN) * types.length)), (short) 0x0006, types, v.array()))
-        ;
+        ByteBuffer buffer = ByteBuffer.allocate(HEADER_LEN + UINT16_LEN + ((UINT8_LEN + UINT64_LEN) * types.length));
+
+        CollectdBinaryProtocol.values(
+                buffer, (short) 0x0006, types, v.array());
+
+        assertArrayEquals("000600180002020200000000000000020000000000000001", buffer);
     }
 
 }

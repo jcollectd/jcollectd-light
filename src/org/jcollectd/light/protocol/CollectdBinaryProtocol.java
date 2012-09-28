@@ -28,18 +28,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /**
- * jcollectd - org.jcollectd.light.protocol
- * <p/>
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
- * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION
- * OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- * WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- * <p/>
- * Date: 9/13/12
- * Time: 10:47 AM
+ * A simple collection of methods implementing writing different parts of Collectd Binary Protocol
+ *
+ * @see <a href="http://collectd.org/wiki/index.php/Binary_protocol">Collectd Binary Protocol</a>
  */
 public class CollectdBinaryProtocol {
 
@@ -49,87 +40,145 @@ public class CollectdBinaryProtocol {
     static final short UINT64_LEN = UINT32_LEN * 2;
     static final short HEADER_LEN = UINT16_LEN * 2;
 
-    /* type header w. type only http://collectd.org/wiki/index.php/Binary_protocol#Value_parts */
-    public static ByteBuffer header(ByteBuffer buffer, byte typeId) {
+    /**
+     * Puts a value type header byte to buffer
+     *
+     * @param buffer ByteBuffer to write data to
+     * @param typeId identifier of a value type
+     * @see <a href="http://collectd.org/wiki/index.php/Binary_protocol#Value_parts">Collectd Binary Protocol - Value parts</a>
+     */
+    public static void header(ByteBuffer buffer, byte typeId) {
         buffer.put(typeId); //write typeId
-        return buffer;
     }
 
-    /* part header w. type and length */
-    public static ByteBuffer header(ByteBuffer buffer, short partId, short length) {
+    /**
+     * Puts a part type header bits and length to ByteBuffer
+     *
+     * @param buffer ByteBuffer to write data to
+     * @param partId identifier of a part type
+     * @param length total bytes to be read for this part
+     * @see <a href="http://collectd.org/wiki/index.php/Binary_protocol#Protocol_structure">Collectd Binary Protocol - Protocol structure</a>
+     */
+    public static void header(ByteBuffer buffer, short partId, short length) {
         buffer.putShort(partId); //write partId
         buffer.putShort(length); //write part length
-        return buffer;
     }
 
-    /* values header w. type, length and number of values */
-    public static ByteBuffer header(ByteBuffer buffer, short partId, short length, short valuesCount) {
+    /**
+     * Puts a part type header bits, length and number of values to ByteBuffer
+     *
+     * @param buffer      ByteBuffer to write data to
+     * @param partId      identifier of a part type
+     * @param length      total bytes to be read for this part
+     * @param valuesCount total number of values to write
+     * @see <a href="http://collectd.org/wiki/index.php/Binary_protocol#Value_parts">Collectd Binary Protocol - Value parts</a>
+     */
+    public static void header(ByteBuffer buffer, short partId, short length, short valuesCount) {
         header(buffer, partId, length);
         buffer.putShort(valuesCount);
-        return buffer;
     }
 
-    /* http://collectd.org/wiki/index.php/Binary_protocol#Numeric_parts */
-    public static ByteBuffer numeric(ByteBuffer buffer, short part, long val) {
-        header(buffer, part, (short) (HEADER_LEN + UINT64_LEN)); //write header
-        buffer.putLong(val); //write long
-        return buffer;
+    /**
+     * Puts a numeric bytes to buffer, along with header bytes.
+     *
+     * @param buffer ByteBuffer to write data to
+     * @param partId identifier of a part type
+     * @param value  value to write
+     * @see <a href="http://collectd.org/wiki/index.php/Binary_protocol#Numeric_parts">Collectd Binary Protocol - Numeric parts</a>
+     */
+    public static void numeric(ByteBuffer buffer, short partId, long value) {
+        header(buffer, partId, (short) (HEADER_LEN + UINT64_LEN)); //write header
+        buffer.putLong(value); //write long
     }
 
-    /* http://collectd.org/wiki/index.php/Binary_protocol#String_parts */
-    public static ByteBuffer string(ByteBuffer buffer, short partId, String val) {
-        if (val == null) val = "";
-        header(buffer, partId, (short) (HEADER_LEN + val.length() + 1)); //write header
-        buffer.put(val.getBytes()).put((byte) '\0'); //write string
-        return buffer;
+    /**
+     * Puts a string part bytes to buffer, along with header bytes.
+     *
+     * @param buffer ByteBuffer to write data to
+     * @param partId identifier of a part type
+     * @param value  value to write
+     * @see <a href="http://collectd.org/wiki/index.php/Binary_protocol#String_parts">Collectd Binary Protocol - String parts</a>
+     */
+    public static void string(ByteBuffer buffer, short partId, String value) {
+        if (value == null) value = "";
+        header(buffer, partId, (short) (HEADER_LEN + value.length() + 1)); //write header
+        buffer.put(value.getBytes()).put((byte) '\0'); //write string
     }
 
-    /*http://collectd.org/wiki/index.php/Binary_protocol#Value_parts*/
-    public static ByteBuffer values(ByteBuffer buffer, short partId, byte[] types, byte[] values) {
+    /**
+     * Puts a value part bytes to buffer, along with header bytes.
+     *
+     * @param buffer ByteBuffer to write data to
+     * @param partId identifier of a part type
+     * @param types  array of typeId bytes
+     * @param values values to write
+     * @see <a href="http://collectd.org/wiki/index.php/Binary_protocol#Values_parts">Collectd Binary Protocol - Value parts</a>
+     */
+    public static void values(ByteBuffer buffer, short partId, byte[] types, byte[] values) {
         header(buffer, partId, (short) (HEADER_LEN + UINT16_LEN + ((UINT8_LEN + UINT64_LEN) * types.length)), (short) types.length);
         buffer.put(types);
         buffer.put(values);
-        return buffer;
     }
 
     /* ENC/SIGN*/
-    public static ByteBuffer sign(ByteBuffer buffer, short partId, String username, byte[] hmac) {
+    public static void sign(ByteBuffer buffer, short partId, String username, byte[] hmac) {
         header(buffer, partId, (short) (HEADER_LEN + username.length() + hmac.length)); //write header
         buffer.put(hmac); //write signature
         buffer.put(username.getBytes()); //write username
-        return buffer;
     }
 
-    public static ByteBuffer encrypt(ByteBuffer buffer, short partId, String username, byte[] iv, byte[] bytes) {
+    public static void encrypt(ByteBuffer buffer, short partId, String username, byte[] iv, byte[] bytes) {
         header(buffer, partId, (short) (HEADER_LEN + username.length() + UINT16_LEN + iv.length + bytes.length));  //write header
         buffer.putShort((short) username.length()).put(username.getBytes()); //write user length and user
         buffer.put(iv); // write init vector
         buffer.put(bytes); // write payload
-        return buffer;
     }
 
-    /* type helpers */
-    public static ByteBuffer value(ByteBuffer buffer, long val) {
-        buffer.putLong(val); //write long
-        return buffer;
+    /**
+     * Puts a long value type bytes to buffer.
+     *
+     * @param buffer ByteBuffer to write data to
+     * @param value  value to write
+     * @see <a href="http://collectd.org/wiki/index.php/Binary_protocol#Values_parts">Collectd Binary Protocol - Value parts</a>
+     */
+    public static void value(ByteBuffer buffer, long value) {
+        buffer.putLong(value); //write long
     }
 
-    public static ByteBuffer value(ByteBuffer buffer, byte typeId, long val) {
+    /**
+     * Puts a long value type bytes to buffer with header, to use when one needs to write single value only.
+     *
+     * @param buffer ByteBuffer to write data to
+     * @param value  value to write
+     * @see <a href="http://collectd.org/wiki/index.php/Binary_protocol#Values_parts">Collectd Binary Protocol - Value parts</a>
+     */
+    public static void value(ByteBuffer buffer, byte typeId, long value) {
         header(buffer, typeId); //write header
-        value(buffer, val); //write long
-        return buffer;
+        value(buffer, value); //write long
     }
 
-    public static ByteBuffer value(ByteBuffer buffer, double val) {
+    /**
+     * Puts a decimal value type bytes to buffer.
+     *
+     * @param buffer ByteBuffer to write data to
+     * @param value  value to write
+     * @see <a href="http://collectd.org/wiki/index.php/Binary_protocol#Values_parts">Collectd Binary Protocol - Value parts</a>
+     */
+    public static void value(ByteBuffer buffer, double value) {
         ByteOrder order = buffer.order(); //get buffer's order
-        buffer.order(ByteOrder.LITTLE_ENDIAN).putDouble(val); //switch to LITTLE_ENDIAN, write double
+        buffer.order(ByteOrder.LITTLE_ENDIAN).putDouble(value); //switch to LITTLE_ENDIAN, write double
         buffer.order(order); //switch to original byteorder
-        return buffer;
     }
 
-    public static ByteBuffer value(ByteBuffer buffer, byte typeId, double val) {
+    /**
+     * Puts a decimal value type bytes to buffer with header, to use when one needs to write single value only.
+     *
+     * @param buffer ByteBuffer to write data to
+     * @param value  value to write
+     * @see <a href="http://collectd.org/wiki/index.php/Binary_protocol#Values_parts">Collectd Binary Protocol - Value parts</a>
+     */
+    public static void value(ByteBuffer buffer, byte typeId, double value) {
         header(buffer, typeId); //write header
-        value(buffer, val); //write val
-        return buffer;
+        value(buffer, value); //write val
     }
 }
