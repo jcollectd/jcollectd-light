@@ -44,6 +44,38 @@ import java.util.List;
  */
 public class Collectd {
 
+    private static boolean isEmpty(String string) {
+        return string == null || string.isEmpty();
+    }
+
+    public static void values(ByteBuffer buffer, String hostname, long time, long interval, String plugin, String pluginInstance, String type, String typeInstance, List<Value> values) {
+        if (!isEmpty(hostname))
+            Part.HOST.write(buffer, hostname);
+        if (time > 0)
+            Part.TIME_HIRES.write(buffer, time);
+        if (interval > 0)
+            Part.INTERVAL_HIRES.write(buffer, interval);
+        if (!isEmpty(plugin))
+            Part.PLUGIN.write(buffer, plugin);
+        if (!isEmpty(pluginInstance))
+            Part.PLUGIN_INSTANCE.write(buffer, pluginInstance);
+        if (!isEmpty(type))
+            Part.TYPE.write(buffer, type);
+        if (!isEmpty(typeInstance))
+            Part.TYPE_INSTANCE.write(buffer, typeInstance);
+        if (values != null && !values.isEmpty()) {
+            byte types[] = new byte[values.size()];
+            byte bytes[] = new byte[CollectdBinaryProtocol.UINT64_LEN * values.size()];
+            ByteBuffer typesBuffer = ByteBuffer.wrap(types);
+            ByteBuffer bytesBuffer = ByteBuffer.wrap(bytes);
+            for (Value val : values) {
+                val.type.header(typesBuffer);
+                val.type.write(bytesBuffer, val.value);
+            }
+            CollectdBinaryProtocol.values(buffer, Part.VALUES.ID, types, bytes);
+        }
+    }
+
     public enum Part {
 
         HOST((short) 0x0000),
@@ -67,12 +99,16 @@ public class Collectd {
             this.ID = id;
         }
 
-        public void write(ByteBuffer buffer, String string) {
-            CollectdBinaryProtocol.string(buffer, ID, string);
+        public void write(ByteBuffer buffer, String value) {
+            CollectdBinaryProtocol.string(buffer, ID, value);
+        }
+
+        public void write(ByteBuffer buffer, long value) {
+            CollectdBinaryProtocol.numeric(buffer, ID, value);
         }
     }
 
-    public static class Value{
+    public static class Value {
         private Type type;
         private Number value;
 
@@ -133,36 +169,4 @@ public class Collectd {
         }
 
     }
-
-    public static void values(ByteBuffer buffer, String hostname, String plugin, String pluginInstance, String type, String typeInstance, List<Value> values) {
-        if (!isEmpty(hostname))
-            Part.HOST.write(buffer, hostname);
-        if (!isEmpty(plugin))
-            Part.PLUGIN.write(buffer, plugin);
-        if (!isEmpty(pluginInstance))
-            Part.PLUGIN_INSTANCE.write(buffer, pluginInstance);
-        if (!isEmpty(type))
-            Part.TYPE.write(buffer, type);
-        if (!isEmpty(typeInstance))
-            Part.TYPE_INSTANCE.write(buffer, typeInstance);
-        if (values != null && !values.isEmpty()) {
-            byte types[] = new byte[values.size()];
-            byte bytes[] = new byte[CollectdBinaryProtocol.UINT64_LEN * values.size()];
-            ByteBuffer typesBuffer = ByteBuffer.wrap(types);
-            ByteBuffer bytesBuffer = ByteBuffer.wrap(bytes);
-            for (Value val : values) {
-                val.type.header(typesBuffer);
-                val.type.write(bytesBuffer, val.value);
-            }
-            CollectdBinaryProtocol.values(buffer, Part.VALUES.ID, types, bytes);
-        }
-
-        //TODO: timestamp and interval
-    }
-
-    private static boolean isEmpty(String string) {
-        return string == null || string.isEmpty();
-    }
-
-
 }
