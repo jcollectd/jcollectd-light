@@ -1,6 +1,8 @@
 language: java
 jdk:
+  - openjdk7
+  - openjdk6
   - oraclejdk7
-#  - openjdk6
+  - oraclejdk6
 script: ant
 install: /bin/true 
