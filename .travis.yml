@@ -1,9 +1,10 @@
 language: java
 jdk:
+  - oraclejdk9
   - oraclejdk8
   - oraclejdk7
+  - openjdk8
   - openjdk7
-  - openjdk6
 script: ant
 before_install:
   - sudo hostname "$(hostname | cut -c1-63)"
