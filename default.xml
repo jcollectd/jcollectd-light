@@ -80,7 +80,7 @@
         <!--copy todir="${classes}/META-INF">
             <fileset dir="${src.dir}/META-INF"/>
         </copy-->
-        <javac sourcepath="" srcdir="${src.dir}" destdir="${classes}" debug="${debug}" source="1.6" target="1.6"
+        <javac sourcepath="" srcdir="${src.dir}" destdir="${classes}" debug="${debug}"
                classpath="${classes}"/>
     </target>
 
@@ -88,7 +88,7 @@
         <ivy:retrieve conf="test" sync="true"/>
         <mkdir dir="${tests}"/>
         <javac srcdir="${test.dir}" destdir="${tests}" classpathref="classpath"
-               debug="${debug}" source="1.6" target="1.6">
+               debug="${debug}">
             <classpath path="${classes}"/>
         </javac>
     </target>
